@@ -473,6 +473,7 @@ model OpenmeshExpertUser {
   RecoverPassword     RecoverPassword[]
   ApplicationOffChain ApplicationOffChain[]
   Xnode               Xnode[]
+  Deployment          Deployment[]
   PythiaChats         PythiaChat[]
 
   createdAt        DateTime  @default(now())
@@ -651,7 +652,7 @@ model RecoverPassword {
   @@map("recoverPassword")
 }
 
-//The xnodes that the users will be able to deploy and manage
+// Note(Tom): This is out of date, keeping it here for compatibility/reference.
 model Xnode { 
   id String @id @default(uuid())
 
@@ -684,11 +685,31 @@ model Xnode {
 
   XnodeClaimActivities XnodeClaimActivities[]
 
-
   createdAt     DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  updatedAt     DateTime? @updatedAt
 
   @@map("xnode")
+}
+
+model Deployment { 
+  id String @id @default(uuid())
+
+  provider    String
+  isUnit      Boolean
+  services    String
+  name        String?
+  description String?
+  location    String?
+  apiKey      String?
+
+  openmeshExpertUserId String
+  openmeshExpertUser   OpenmeshExpertUser  @relation(fields: [openmeshExpertUserId], references: [id])
+  XnodeClaimActivities XnodeClaimActivities[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
+
+  @@map("deployment")
 }
 
 //The xnodes that the users will be able to deploy and manage
@@ -702,6 +723,9 @@ model XnodeClaimActivities {
 
   xnodeId String  
   xnode   Xnode  @relation(fields: [xnodeId], references: [id])
+
+  deploymentId String  
+  deployment   Deployment  @relation(fields: [deploymentId], references: [id])
 
   createdAt     DateTime  @default(now())
   updatedAt DateTime? @updatedAt

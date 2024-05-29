@@ -61,148 +61,51 @@ export class XnodesService {
       accessToken,
     );
 
-    const xnodes = await this.prisma.xnode.findMany({
+    const deployments = await this.prisma.deployment.findMany({
       where: {
         openmeshExpertUserId: user.id,
       },
     });
 
-    if (xnodes.length > 100) {
+    // XXX: Handle more elegantly? Maybe offer user the chance to delete Xnodes.
+    // This actually works OK for now. Just important to note.
+    if (deployments.length > 100) {
       throw new BadRequestException('Xnode limit reached', {
         cause: new Error(),
         description: 'Xnode limit reached',
       });
     }
 
-    if (!user.equinixAPIKey) {
-      throw new BadRequestException(
-        'User need to have a valid equinix api key',
-        {
-          cause: new Error(),
-          description: 'User need to have a valid equinix api key',
-        },
-      );
-    }
-
-    const { features, serverNumber, websocketEnabled, status, ...dataNode } =
+    const { services, ...dataNode } =
       dataBody;
 
-    const uuid = generateUUID8();
-    const finalFeatures = [];
+    // TODO:
+    //  - Check what kind of Xnode we're provisioning.
+    //  - If unit:
+    //    - Check NFT validity with Fort API.
+    //    - Tell fort to launch or whatever with services json.
+    //  - Otherwise:
+    //    - Find appropriate provider.
+    //  - On success we add the Xnode to the database.
 
-    if (features.length > 0) {
-      finalFeatures.push(defaultStreamProcessorPayload);
-      finalFeatures.push({
-        ...defaultSourcePayload,
-        workloads: features,
-      });
-    }
-
-    if (websocketEnabled) {
-      finalFeatures.push(defaultWSPayload);
-    }
-
-    // XXX: This is a HACK! This is a HACK! This is a HACK! This is a HACK! This is a HACK!
-    // NOTE (Tomas): Bruno pls change this :)
-    // To fix this:
-    //  Add a flag sort of like "websocketEnabled" that gets passed along here
-    //  use that as the condition to deploy this thing. Otherwise people who enter an API key once will
-    //  have all future XNodes include the ValidationCloud collector
-    // Also this should work for the Polygon version too! So one flag for each.
-    //  There's more work to be done on the collector before that would work.
-    if (user.validationCloudAPIKeyEthereum != null) {
-      // 4 is arbitrary just wanna keep this temp code future proof
-      if (user.validationCloudAPIKeyEthereum.length > 4) {
-        // NOTE(Tomas): Not sure if this is correct way to clone in Typescript.
-        //  Bruno you're the master this is also your house up to you
-        let scuffedPayload = { ...defaultSourcePayload };
-
-        let apiKey = user.validationCloudAPIKeyEthereum;
-
-        // NOTE(Tomas): Docs aren't that easy to interpret, chatgpt said env variables set like this are added as OS env variables on the container. ( it works I promise :) )
-        scuffedPayload.args +=
-          ' --set env.ETHEREUM_NODE_WS_URL=https://mainnet.ethereum.validationcloud.io/v1/wss/' +
-          apiKey;
-        scuffedPayload.args +=
-          ' --set env.ETHEREUM_NODE_HTTP_URL=wss://mainnet.ethereum.validationcloud.io/v1/' +
-          apiKey;
-        scuffedPayload.args += ' --set env.ETHEREUM_NODE_SECRET=' + apiKey;
-
-        // NOTE(Tomas): Has to have at least one workload.
-        //  Here we piggyback off of ethereum since it's the closest config.
-        //  Ideally all this code would be abstracted/burned.
-        scuffedPayload['workloads'] = ['ethereum'];
-
-        finalFeatures.push(scuffedPayload);
-      }
-    }
-
-    const payload = {
-      builds: [
-        {
-          auth_token: user.equinixAPIKey,
-          aws_role_arn: 'arn:aws:iam::849828677909:role/super',
-          ccm_enabled: 'true',
-          client_name: `${dataNode.name.replace(/\s+/g, '')}-${
-            user.id
-          }-${generateUUID16()}`,
-          count_x86: JSON.stringify(serverNumber),
-          features: finalFeatures,
-          kubernetes_version: '1.25.10-00',
-          metro: dataNode.serverLoc,
-          product_version: 'v3',
-          single_xnode: dataNode.type === 'validator' ? 'true' : 'false',
-        },
-      ],
-      adoBuildTag: uuid,
+    let payload = {
+        
     };
-    console.log('saiu payload');
-    console.log(payload);
-    console.log('features');
-    console.log(finalFeatures);
 
-    const payloadStr = JSON.stringify(payload);
-    console.log('saiu payloadStr');
-    const signature = createHmac('sha1', this.SECRET)
-      .update(payloadStr)
-      .digest('hex');
-    console.log('saiu signature new');
-    console.log(signature);
+    console.log('Final services:');
+    console.log(services);
 
-    try {
-      const config = {
-        method: 'post',
-        url: this.WEBHOOK_URL,
-        headers: {
-          'X-Hub-Signature': `sha1=${signature}`,
-          'Content-Type': 'application/json',
-        },
-        data: payloadStr,
-      };
-      await axios(config).then(function (response) {
-        console.log('this is the response');
-        console.log(response.data);
-      });
-    } catch (err) {
-      console.log('error happened during runtime');
-      console.log(err);
-    }
-
-    const xnode = await this.prisma.xnode.create({
+    const xnode = await this.prisma.deployment.create({
       data: {
         openmeshExpertUserId: user.id,
-        adoBuildTag: uuid,
-        features: JSON.stringify(features),
-        serverNumber: JSON.stringify(serverNumber),
-        websocketEnabled,
-        status: 'Deploying',
+        services: services,
         ...dataNode,
       },
     });
 
     console.log('went through it');
 
-    await this.getXnodeDeploymentLog(uuid, xnode.id);
+    // await this.getXnodeDeploymentLog(uuid, xnode.id);
 
     return xnode;
   }
@@ -489,11 +392,11 @@ export class XnodesService {
       },
     };
 
-    let dado;
+    let data: any;
 
     try {
       await axios(config).then(function (response) {
-        dado = response.data;
+        data = response.data;
       });
     } catch (err) {
       console.log(err.response.data.error);

@@ -26,10 +26,6 @@ enum XnodeEnum {
   OFF = 'Off',
 }
 
-enum LocationEnum {
-  ny = 'ny',
-}
-
 export class CreateXnodeDto {
   @IsNotEmpty()
   @MaxLength(1000)
@@ -61,109 +57,41 @@ export class CreateXnodeDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(1000)
   @ApiProperty({
     required: false,
-    description: 'The xnode useCase',
-    maxLength: 1000,
+    description: 'Provider',
+    example: 'equinix',
   })
-  useCase: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  @ApiProperty({
-    required: false,
-    description: 'The xnode type',
-    maxLength: 1000,
-  })
-  type: string;
-
-  @IsOptional()
-  @IsString()
-  @IsEnum(XnodeEnum, {
-    each: true,
-    message:
-      'Status value must be one of the following: Draft, Deploying, Running, Off',
-  })
-  @ApiProperty({
-    required: false,
-    description: 'The xnode status',
-    enum: ['Draft', 'Deploying', 'Running', 'Off'],
-  })
-  status: string;
+  provider: string;
 
   @IsNotEmpty()
-  @IsString()
-  @IsEnum(LocationEnum, {
-    each: true,
-    message: "The server location must be ['ny']",
-  })
-  @ApiProperty({
-    required: false,
-    description: 'The server location',
-    enum: ['ny'],
-  })
-  serverLoc: string;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  @Max(6)
-  @ApiProperty({
-    required: false,
-    description: 'The number of servers',
-  })
-  serverNumber: number;
-
-  @IsOptional()
   @IsBoolean()
   @ApiProperty({
-    required: false,
-    description: 'The xnode websocketEnabled is enabled',
-    example: true,
+    description: 'Is the Xnode being deployed a unit.',
   })
-  websocketEnabled: boolean;
+  isUnit: boolean;
 
   @IsNotEmpty()
-  @IsArray()
-  @ArrayMaxSize(50)
-  @IsString({ each: true })
-  @ApiProperty({
-    required: false,
-    description: 'The xnode features',
-    isArray: true,
-    example: ['binance'],
-  })
-  features: string[];
-
-  @IsOptional()
   @IsString()
-  @MaxLength(20000)
+  // XXX: Might have to allow more than max 50 services.
   @ApiProperty({
     required: false,
-    description:
-      'The xnode nodes - The nodes that exists in the console created by the user',
+    // TODO: Clarify this with good example or whatever.
+    description: 'A json string with all the services.',
+    example: ['{}'],
   })
-  consoleNodes: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(20000)
-  @ApiProperty({
-    required: false,
-    description:
-      'The xnode edges - The edges (connections bettwen nodes) that exists in the console created by the user',
-  })
-  consoleEdges: string;
+  // It's just an array of JSON objects from the DPL's perspective, it does no parsing really.
+  // TODO: Maybe check validity at this stage? Would involve duplicating definition from frontend...
+  // Frontend check should probably be enough.
+  services: string;
 }
 
 export class UpdateXnodeDto {
   @IsNotEmpty()
-  @MaxLength(1000)
   @IsString()
+  @MaxLength(1000)
   @ApiProperty({
-    description: 'The xnode id',
+    description: 'Id of the Xnode',
     maxLength: 1000,
   })
   xnodeId: string;
@@ -172,7 +100,7 @@ export class UpdateXnodeDto {
   @MaxLength(1000)
   @IsString()
   @ApiProperty({
-    description: 'The xnode name',
+    description: 'The Xnode name',
     maxLength: 1000,
   })
   name: string;
@@ -182,43 +110,10 @@ export class UpdateXnodeDto {
   @MaxLength(1000)
   @ApiProperty({
     required: false,
-    description: 'The xnode desc',
+    description: 'The Xnode desc',
     maxLength: 1000,
   })
   description: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  @ApiProperty({
-    required: false,
-    description: 'The xnode useCase',
-    maxLength: 1000,
-  })
-  useCase: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  @ApiProperty({
-    required: false,
-    description: 'The xnode type',
-    maxLength: 1000,
-  })
-  type: string;
-
-  @IsOptional()
-  @IsString()
-  @IsEnum(XnodeEnum, {
-    each: true,
-    message: 'Status value must be one of the following: Draft, Running, Off',
-  })
-  @ApiProperty({
-    required: false,
-    description: 'The xnode status',
-    enum: ['Draft', 'Running', 'Deploying', 'Off'],
-  })
-  status: string;
 
   @IsOptional()
   @IsString()

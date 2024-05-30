@@ -30,7 +30,9 @@ import { OpenmeshExpertsAuthService } from 'src/openmesh-experts/openmesh-expert
 import {
   ConnectAPI,
   CreateXnodeDto,
+  XnodeHeartbeatDto,
   GetXnodeDto,
+  GetXnodeServiceDto,
   StoreXnodeData,
   StoreXnodeSigningMessageDataDTO,
   UpdateXnodeDto,
@@ -86,28 +88,95 @@ export class XnodesService {
     //    - Tell fort to launch or whatever with services json.
     //  - Otherwise:
     //    - Find appropriate provider.
-    //  - On success we add the Xnode to the database.
-
-    let payload = {
-        
-    };
 
     console.log('Final services:');
     console.log(services);
 
+    if (dataNode.isUnit) {
+      // Calls API here!
+    } else {
+      // Check API key against VPSs.
+      // .
+    }
+
+    // Note(Tom): This token is for the admin service on the Xnode to identify itself for read requests/heartbeats.
+    // Will be replaced with PKI at some point.
+    let xnodeAccessToken = ""
+    { // Make the access token.
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+      for (let i = 0; i < 64; i++) {
+        xnodeAccessToken += chars[Math.floor(Math.random() * 61)]
+      }
+    }
+
+    // Add the xnode deployment to our database.
     const xnode = await this.prisma.deployment.create({
       data: {
-        openmeshExpertUserId: user.id,
         services: services,
+        accessToken: xnodeAccessToken,
+        openmeshExpertUserId: user.id,
         ...dataNode,
       },
     });
 
     console.log('went through it');
 
+    // XXX: Do I need to reimplement this?
     // await this.getXnodeDeploymentLog(uuid, xnode.id);
 
     return xnode;
+  }
+
+  async getXnodeServices(dataBody: GetXnodeServiceDto, req: Request) {
+    const accessToken = String(req.headers['x-parse-session-token']);
+    // const user = await this.openmeshExpertsAuthService.verifySessionToken(
+    //   accessToken,
+    // );
+
+    const node = await this.prisma.deployment.findFirst({
+      where: {
+        AND: [
+          {
+            id: dataBody.id,
+          },
+          {
+            accessToken: accessToken
+          }
+        ]
+      }
+    })
+
+    return node.services
+  }
+
+  async pushXnodeHeartbeat(dataBody: XnodeHeartbeatDto, req: Request) {
+    const accessToken = String(req.headers['x-parse-session-token']);
+
+    const { id, ...data} = dataBody;
+
+    try {
+      await this.prisma.deployment.updateMany({
+        where: {
+          AND: [
+            {
+              id: id,
+            },
+            {
+              accessToken: accessToken
+            }
+          ]
+        },
+        data: {
+          heartbeatData: JSON.stringify(data),
+        }
+      })
+    } catch(err) {
+      throw new BadRequestException('Failed to authenticate', {
+        cause: new Error(),
+        description: 'Couldn\'t authenticate Xnode / Xnode id is invalid.',
+      });
+    }
   }
 
   //since the azure pipeline does not have a websocket to connect to see when the deployment is ready, we need to call the api every 2 seconds to see if the deploy was successfull
@@ -260,7 +329,7 @@ export class XnodesService {
       accessToken,
     );
 
-    return await this.prisma.xnode.findMany({
+    return await this.prisma.deployment.findMany({
       where: {
         openmeshExpertUserId: user.id,
       },

@@ -662,7 +662,7 @@ model Xnode {
   status      String? //the xnode status -> Draft, Running, Off;
   type        String? //Type of Xnode - > Ex: validator
   location    String?
-  consoleNodes      String? //The nodes that exists in the console created by the user
+  consoleNodes    String? //The nodes that exists in the console created by the user
   consoleEdges    String? //The edges (connections bettwen nodes) that exists in the console created by the user
 
   validatorSignature String? //If it is a validator, we request the user to sign a message with its wallet so we can now which wallet we are going to mint tokens of staking - the message signed here is: "I want to participate in the Validator beta"
@@ -694,19 +694,22 @@ model Xnode {
 model Deployment { 
   id String @id @default(uuid())
 
-  provider    String
-  isUnit      Boolean
-  services    String
-  name        String?
-  description String?
-  location    String?
-  apiKey      String?
+  provider      String
+  isUnit        Boolean
+  services      String
+  name          String?
+  description   String?
+  location      String?
+  apiKey        String?
+  accessToken   String?
+  heartbeatData String?
 
   openmeshExpertUserId String
   openmeshExpertUser   OpenmeshExpertUser  @relation(fields: [openmeshExpertUserId], references: [id])
   XnodeClaimActivities XnodeClaimActivities[]
 
   createdAt     DateTime  @default(now())
+  // TODO: Use this to track "heartbeat" of system.
   updatedAt     DateTime? @updatedAt
 
   @@map("deployment")

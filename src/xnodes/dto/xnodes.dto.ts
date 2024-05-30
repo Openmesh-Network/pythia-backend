@@ -86,6 +86,77 @@ export class CreateXnodeDto {
   services: string;
 }
 
+export class XnodeHeartbeatDto {
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  @ApiProperty({
+    description: 'The xnode\'s id',
+    maxLength: 1000,
+  })
+  id: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'Percent CPU used.'
+  })
+  cpuPercent: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'Maximum CPU used.'
+  })
+  cpuPercentPeek: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'RAM used.'
+  })
+  ramMbUsed: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'Total available RAM'
+  })
+  ramMbAvailable: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'Total available RAM'
+  })
+  ramMbPeek: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'Storage used.'
+  })
+  storageMbUsed: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({
+    description: 'Total available storage.'
+  })
+  storageMbAvailable: number;
+}
+
+export class GetXnodeServiceDto {
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  @ApiProperty({
+    description: 'The xnode\'s id',
+    maxLength: 1000,
+  })
+  id: string;
+}
+
 export class UpdateXnodeDto {
   @IsNotEmpty()
   @IsString()
